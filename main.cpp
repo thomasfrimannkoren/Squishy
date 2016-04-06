@@ -3,16 +3,27 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <iostream>
+
 #include "image.h"
 
-int main(int argc, char* argv[]){
-	QApplication app(argc, argv);
+using namespace std;
 
-	CARImage* img = new CARImage("cross.jpeg");
+int main(int argc, char* argv[]){
+//	QCoreApplication app(argc, argv);
+
+	CARImage* img = new CARImage("test.png");
+	cout << "Before calulations" << endl;
 	img->calculateWeights();
+	img->calculatePaths();
+	cout << "After calculation" << endl;
+	img->printWeights();
+	img->printPaths();
+	cout << "Now saving shit" << endl;
 	cv::Mat result = img->getWeights();
 
 	cv::imwrite("weights.jpeg", result);
 	delete img;
-	return app.exec();
+	return 0;
+//	return app.exec();
 }
