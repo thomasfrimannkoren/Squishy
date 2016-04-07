@@ -6,20 +6,63 @@
 
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 
 using namespace cv;
 using namespace std;
 
+QImage Mat2QImage(const cv::Mat3b &src) {
+        QImage dest(src.cols, src.rows, QImage::Format_ARGB32);
+        for (int y = 0; y < src.rows; ++y) {
+                const cv::Vec3b *srcrow = src[y];
+                QRgb *destrow = (QRgb*)dest.scanLine(y);
+                for (int x = 0; x < src.cols; ++x) {
+                        destrow[x] = qRgba(srcrow[x][2], srcrow[x][1], srcrow[x][0], 255);
+                }
+        }
+        return dest;
+}
+
+//QImage Mat2QImage(const cv::Mat_<double> &src)
+//{
+//	double scale = 255.0;
+//	QImage dest(src.cols, src.rows, QImage::Format_ARGB32);
+//	for (int y = 0; y < src.rows; ++y) {
+//		const double *srcrow = src[y];
+//		QRgb *destrow = (QRgb*)dest.scanLine(y);
+//		for (int x = 0; x < src.cols; ++x) {
+//			unsigned int color = srcrow[x] * scale;
+//			destrow[x] = qRgba(color, color, color, 255);
+//		}
+//	}
+//	return dest;
+//}
 
 CARImage::CARImage(const string& filename, QObject* parent) : QObject(parent){
 	this->originalImage = imread(filename, CV_LOAD_IMAGE_COLOR);
+
+	int cols = this->originalImage.cols;
+	int rows = this->originalImage.rows;
+
+	if (cols > 400 && cols >= rows){
+		float aspectRatio = (float)rows / (float)cols;
+		Size size(400,(int)(400.0*aspectRatio));
+		cv::resize(this->originalImage, this->originalImage, size, 0, 0, CV_INTER_LANCZOS4);
+	}
+	else if (rows > 400 && rows >= cols){
+		float aspectRatio = (float)cols / (float)rows;
+		Size size((int)(400.0*aspectRatio), 400);
+		cv::resize(this->originalImage, this->originalImage, size, 0, 0, CV_INTER_LANCZOS4);
+	}
+
+	this->originalImage.copyTo(editedImage);
 }
 
-void CARImage::calculateWeights(void){
+void CARImage::calculateWeights(Mat* image){
 	Mat imageGray, gradX, gradY, gradXTemp, gradYTemp, gradXf, gradYf;
 	int depth = CV_16S;
 	int kernelSize = 1;
-	cvtColor(this->originalImage, imageGray, CV_BGR2GRAY);
+	cvtColor(*image, imageGray, CV_BGR2GRAY);
 
 	//Gradient X
 	Sobel(imageGray, gradX, depth, 1, 0, kernelSize, 1, 0);
@@ -32,34 +75,28 @@ void CARImage::calculateWeights(void){
 	gradYTemp.convertTo(gradYf, CV_32F);
 
 	addWeighted(gradXf, 0.5, gradYf, 0.5, 0, this->weights);
-//	Mat gradXSquared, gradYSquared;
-//	pow(gradXf, 2, gradXSquared);
-//	pow(gradYf, 2, gradYSquared);
-//
-//	Mat gradSquared;
-//	add(gradXSquared, gradYSquared, gradSquared);
-//
-//	sqrt(gradSquared, this->weights);
 }
 
-void CARImage::calculatePaths(void){
+void CARImage::calculatePaths(int dir){
 	int rows = this->weights.rows;
 	int cols = this->weights.cols;
-	
+    cout << "Rows: " << rows << " Cols: " << cols << endl;
+
 	verticalPaths.resize(cols);
 	horizontalPaths.resize(rows);
 
 	//uchar* weights;
 	weightedPoint v[rows*cols];
 
-	float* weights = new float[rows*cols];
+    float* w;
+    w = new float[rows*cols];
+    cout << w << endl;
 	for(int i = 0; i < rows; ++i){
-		float* r = this->weights.ptr<float>(i);
+        float* r = this->weights.ptr<float>(i);
 		for(int j = 0; j < cols; ++j){
-			weights[i*cols+j] = *r;
-			r++;
+            w[i*cols+j] = r[j];
 		}
-	}
+    }
 
 	for(int i = 0; i < rows; ++i){
 		for(int j = 0; j < cols; ++j){
@@ -68,13 +105,17 @@ void CARImage::calculatePaths(void){
 		}
 	}
 
-	
-	this->calculateVerticalPaths(weights, v, rows, cols);
-	this->calculateHorizontalPaths(weights, v, rows, cols);
+	if(!dir){
+        this->calculateVerticalPaths(w, v, rows, cols);
+	}
+	else{
+        this->calculateHorizontalPaths(w, v, rows, cols);
+	}
+    delete[] w;
 }
 
 void CARImage::calculateVerticalPaths(float* weights, weightedPoint* v, int rows, int cols){
-	
+
 	for(int i = 0; i < rows; ++i){
 		for(int j = 0; j < cols; ++j){
 			//Set the weights of the first row
@@ -91,18 +132,6 @@ void CARImage::calculateVerticalPaths(float* weights, weightedPoint* v, int rows
 			if ( j != (cols-1) && (v[(i-1)*cols+(j+1)].weight < prev->weight) ){
 				prev = &(v[(i-1)*cols+(j+1)]);
 			}
-			cout << "Point: [" << j << "," << i << "]" << "points to [" << prev->pos.x << "," << prev->pos.y << "] with weight: " << prev->weight << endl;
-//			//Find the start and end values to consider in the above row
-//			int k_start = j != 0 ? j-1 : 0;
-//			int k_end = j!= (cols-1) ? j+1 : (cols-1);
-//				
-//			//Find the best possible path to one of three above points
-//			weightedPoint* prev = &(v[(i-1)*cols+k_start]);
-//			for (int k = k_start+1; k <= k_end; ++k){
-//				if ( v[(i-1)*cols+k].weight < prev->weight ){
-//					prev = &(v[(i-1)*cols+k]);
-//				}
-//			}
 			v[i*cols+j].previous = prev;
 			v[i*cols+j].weight = prev->weight + weights[i*cols+j];
 		}
@@ -126,8 +155,7 @@ void CARImage::calculateHorizontalPaths(float* weights, weightedPoint* v, int ro
 				v[j*cols+i].previous = 0;
 				continue;
 			}
-//			int k_start = j != 0 ? j-1 : 0;
-//			int k_end = j != (rows-1) ? j+1 : (rows-1);
+
 
 			weightedPoint* prev = &(v[j*cols+(i-1)]);
 			if ( j != 0 && (v[(j-1)*cols+(i-1)].weight < prev->weight) ){
@@ -136,14 +164,7 @@ void CARImage::calculateHorizontalPaths(float* weights, weightedPoint* v, int ro
 			if ( j != (rows-1) && (v[(j+1)*cols+(i-1)].weight < prev->weight) ){
 				prev = &(v[(j+1)*cols+(i-1)]);
 			}
-			cout << "Point: [" << j << "," << i << "]" << "points to [" << prev->pos.x << "," << prev->pos.y << "] with weight: " << prev->weight << endl;
 
-//			weightedPoint* prev = &(v[(j-1)*cols+k_start]);
-//			for(int k = k_start+1; k <= k_end; ++k){
-//				if ( v[(j-1)*cols+k].weight < prev->weight ){
-//					prev = &(v[(i-1)*cols+k]);
-//				}
-//			}
 			v[j*cols+i].previous = prev;
 			v[j*cols+i].weight = prev->weight + weights[j*cols+i];
 		}
@@ -161,19 +182,10 @@ void CARImage::calculateHorizontalPaths(float* weights, weightedPoint* v, int ro
 
 
 void CARImage::printWeights(void){
-	int cols = this->weights.cols;
-	int rows = this->weights.rows;
 
 	cout << "=====WEIGHTS=====" << endl;
-//	for(int i = 0; i < rows; ++i){
-//		cout << '|';
-//		for(int j = 0; j < cols; ++j){
-//			cout << setfill(' ') << setw(5) << this->weights.at<uchar>(i, j);
-//			cout << '|';
-//		}
-//		cout << endl;
-//	}
-	cout << this->weights << endl;
+
+	cout << setfill(' ') << setw(5) <<this->weights << endl;
 }
 
 void CARImage::printPaths(void){
@@ -197,9 +209,145 @@ void CARImage::printPaths(void){
 		cout << endl;
 	}
 }
-			
 
-				
+void CARImage::shrinkWidthBy1Px(void){
+	this->calculateWeights(&editedImage);
+	this->calculatePaths(0);
+	int cols = this->weights.cols;
+	int rows = this->weights.rows;
+	int rmPix[rows];
+	path_t* shortestPath = &(verticalPaths[1]);
+	vector<path_t>::iterator it;
+	for(it = verticalPaths.begin(); it != verticalPaths.end(); ++it){
+		if (it->weight < shortestPath->weight){
+			shortestPath = &(*it);
+		}
+	}
+	removedVPaths.push_back(*shortestPath);
+	list<point_t>::iterator lit;
+	cout << "Will delete the following path: ";
+	for(lit = shortestPath->path.begin(); lit != shortestPath->path.end(); ++lit){
+		rmPix[lit->x] = lit->y;
+		cout << "->[" << lit->x << ',' << lit->y << ']';
+	}
+	cout << endl;
+    Mat newImage;
+    editedImage.copyTo(newImage);
+	for (int i = 0; i < rows; ++i){
+        Vec3b* pixel = newImage.ptr<Vec3b>(i);
+		for(int j = 0; j < (cols-1); ++j){
+			if( j >= rmPix[i] ){
+				pixel[j][0] = pixel[j+1][0];	
+				pixel[j][1] = pixel[j+1][1];	
+				pixel[j][2] = pixel[j+1][2];	
+			}
+		}
+	}
+    newImage(Rect(0,0,cols-1, rows)).copyTo(editedImage);
+}
 
+void CARImage::shrinkHeightBy1Px(void){
+    this->calculateWeights(&editedImage);
+    this->calculatePaths(1);
+	int cols = this->weights.cols;
+	int rows = this->weights.rows;
+	int rmPix[cols];
 
+	path_t* shortestPath = &(horizontalPaths[1]);
+	vector<path_t>::iterator it;
+	for(it = horizontalPaths.begin(); it != horizontalPaths.end(); ++it){
+		if (it->weight < shortestPath->weight){
+			shortestPath = &(*it);
+		}
+	}
 
+	list<point_t>::iterator lit;
+	for(lit = shortestPath->path.begin(); lit != shortestPath->path.end(); ++lit){
+		rmPix[lit->y] = lit->x;
+	}
+
+	Mat newImage;
+	editedImage.copyTo(newImage);
+	for (int i = 0; i < cols; ++i){
+		for(int j = 0; j < (rows-1); ++j){
+			if( j >= rmPix[j] ){
+				Vec3b* tPixel = newImage.ptr<Vec3b>(j);
+				Vec3b* nPixel = newImage.ptr<Vec3b>(j+1);
+				tPixel[i][0] = nPixel[i][0];
+				tPixel[i][1] = nPixel[i][1];
+				tPixel[i][2] = nPixel[i][2];
+			}
+		}
+	}
+	newImage(Rect(0,0,cols, rows-1)).copyTo(editedImage);
+}
+
+void CARImage::saveEdited(const std::string& filename){
+	imwrite(filename, this->editedImage);
+}
+
+void CARImage::saveGradient(const std::string& filename){
+	calculateWeights(&originalImage);
+	imwrite(filename, this->weights);
+}
+
+QImage CARImage::getOriginal(void){
+	return Mat2QImage(this->originalImage);
+}
+
+QImage CARImage::getEdited(void){
+	return Mat2QImage(this->editedImage);
+}
+QImage CARImage::getGradient(void){
+	calculateWeights(&originalImage);
+	Mat temp;
+	cvtColor(weights, temp, CV_GRAY2BGR);
+	return Mat2QImage(temp);
+}
+
+void CARImage::resize(int width, int height){
+	if(width > editedImage.cols || height > editedImage.rows){
+		originalImage.copyTo(editedImage);
+	}
+
+	int widthIter = editedImage.cols - width;
+	for(int i = 0; i < widthIter; ++i){
+		shrinkWidthBy1Px();
+	}
+
+	int heightIter = editedImage.rows - height;
+	for(int i = 0; i < heightIter; ++i){
+		shrinkHeightBy1Px();
+	}
+}
+
+void CARImage::restore(void){
+	originalImage.copyTo(editedImage);
+}
+
+QImage CARImage::getVertPaths(void){
+	calculateWeights(&originalImage);
+	calculatePaths(0);
+
+	//sort(removedVPaths.begin(), removedVPaths.end());
+
+	int nPaths = removedVPaths.size();
+
+	Mat retVal;
+	originalImage.copyTo(retVal);
+
+	path_t* e;
+	for(int i = 0; i < nPaths; ++i){
+		e = &(removedVPaths[i]);
+		list<point_t>::iterator it;
+		for(it = e->path.begin(); it != e->path.end(); ++it){
+			Vec3b* pix = retVal.ptr<Vec3b>(it->x, it->y);
+			pix[0] = 0;
+			pix[1] = 0;
+			pix[2] = 0;
+		}
+	}
+	return Mat2QImage(retVal);
+}
+
+	

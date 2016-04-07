@@ -6,24 +6,15 @@
 #include <iostream>
 
 #include "image.h"
+#include "mainwindow.h"
 
 using namespace std;
 
 int main(int argc, char* argv[]){
-//	QCoreApplication app(argc, argv);
+	QApplication app(argc, argv);
 
-	CARImage* img = new CARImage("test.png");
-	cout << "Before calulations" << endl;
-	img->calculateWeights();
-	img->calculatePaths();
-	cout << "After calculation" << endl;
-	img->printWeights();
-	img->printPaths();
-	cout << "Now saving shit" << endl;
-	cv::Mat result = img->getWeights();
+	MainWindow wnd;
+	wnd.show();
 
-	cv::imwrite("weights.jpeg", result);
-	delete img;
-	return 0;
-//	return app.exec();
+	return app.exec();
 }

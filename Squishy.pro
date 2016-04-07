@@ -12,5 +12,10 @@ CONFIG += debug
 QT += widgets
 
 # Input
-HEADERS += image.h
-SOURCES += image.cpp main.cpp
+HEADERS += image.h \
+    mainwindow.h
+SOURCES += image.cpp main.cpp \
+    mainwindow.cpp
+
+FORMS += \
+    mainwindow.ui
