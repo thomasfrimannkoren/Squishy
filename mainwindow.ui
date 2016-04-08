@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1293</width>
-    <height>798</height>
+    <width>1920</width>
+    <height>1080</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,18 +17,18 @@
    <widget class="QGraphicsView" name="editedView">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>969</x>
       <y>10</y>
-      <width>631</width>
-      <height>471</height>
+      <width>921</width>
+      <height>601</height>
      </rect>
     </property>
    </widget>
    <widget class="QPushButton" name="restore">
     <property name="geometry">
      <rect>
-      <x>1150</x>
-      <y>605</y>
+      <x>1760</x>
+      <y>760</y>
       <width>80</width>
       <height>25</height>
      </rect>
@@ -40,8 +40,8 @@
    <widget class="QPushButton" name="openNew">
     <property name="geometry">
      <rect>
-      <x>1060</x>
-      <y>655</y>
+      <x>1760</x>
+      <y>820</y>
       <width>80</width>
       <height>25</height>
      </rect>
@@ -53,8 +53,8 @@
    <widget class="QPushButton" name="saveEdited">
     <property name="geometry">
      <rect>
-      <x>1150</x>
-      <y>655</y>
+      <x>1760</x>
+      <y>860</y>
       <width>80</width>
       <height>25</height>
      </rect>
@@ -66,8 +66,8 @@
    <widget class="QLabel" name="weightLabel">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>740</y>
+      <x>30</x>
+      <y>1020</y>
       <width>54</width>
       <height>17</height>
      </rect>
@@ -79,18 +79,18 @@
    <widget class="QGraphicsView" name="weightView">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>510</y>
-      <width>301</width>
-      <height>221</height>
+      <x>30</x>
+      <y>640</y>
+      <width>521</width>
+      <height>381</height>
      </rect>
     </property>
    </widget>
    <widget class="QLabel" name="editedLabel">
     <property name="geometry">
      <rect>
-      <x>650</x>
-      <y>490</y>
+      <x>970</x>
+      <y>620</y>
       <width>54</width>
       <height>17</height>
      </rect>
@@ -102,8 +102,8 @@
    <widget class="QSpinBox" name="selectY">
     <property name="geometry">
      <rect>
-      <x>1160</x>
-      <y>565</y>
+      <x>1770</x>
+      <y>675</y>
       <width>71</width>
       <height>26</height>
      </rect>
@@ -112,8 +112,8 @@
    <widget class="QPushButton" name="transform">
     <property name="geometry">
      <rect>
-      <x>1060</x>
-      <y>605</y>
+      <x>1760</x>
+      <y>720</y>
       <width>80</width>
       <height>25</height>
      </rect>
@@ -125,18 +125,18 @@
    <widget class="QGraphicsView" name="originalView">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>30</x>
       <y>10</y>
-      <width>631</width>
-      <height>471</height>
+      <width>921</width>
+      <height>600</height>
      </rect>
     </property>
    </widget>
    <widget class="QLabel" name="xLabel">
     <property name="geometry">
      <rect>
-      <x>1000</x>
-      <y>570</y>
+      <x>1750</x>
+      <y>640</y>
       <width>16</width>
       <height>17</height>
      </rect>
@@ -148,8 +148,8 @@
    <widget class="QLabel" name="yLabel">
     <property name="geometry">
      <rect>
-      <x>1140</x>
-      <y>570</y>
+      <x>1750</x>
+      <y>680</y>
       <width>16</width>
       <height>17</height>
      </rect>
@@ -161,8 +161,8 @@
    <widget class="QSpinBox" name="selectX">
     <property name="geometry">
      <rect>
-      <x>1020</x>
-      <y>565</y>
+      <x>1770</x>
+      <y>635</y>
       <width>71</width>
       <height>26</height>
      </rect>
@@ -171,8 +171,8 @@
    <widget class="QLabel" name="originalLabel">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>490</y>
+      <x>30</x>
+      <y>610</y>
       <width>54</width>
       <height>17</height>
      </rect>
@@ -184,8 +184,8 @@
    <widget class="QPushButton" name="saveGradient">
     <property name="geometry">
      <rect>
-      <x>1150</x>
-      <y>700</y>
+      <x>1760</x>
+      <y>900</y>
       <width>80</width>
       <height>25</height>
      </rect>
@@ -194,13 +194,85 @@
      <string>Save weight</string>
     </property>
    </widget>
+   <widget class="QLabel" name="vpLabel">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>1020</y>
+      <width>101</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Vertical Paths</string>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="vpView">
+    <property name="geometry">
+     <rect>
+      <x>580</x>
+      <y>640</y>
+      <width>531</width>
+      <height>381</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="saveVPaths">
+    <property name="geometry">
+     <rect>
+      <x>1760</x>
+      <y>940</y>
+      <width>80</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Save Vpaths</string>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="hpView">
+    <property name="geometry">
+     <rect>
+      <x>1150</x>
+      <y>640</y>
+      <width>531</width>
+      <height>381</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="hpLabel">
+    <property name="geometry">
+     <rect>
+      <x>1150</x>
+      <y>1020</y>
+      <width>101</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Horizontal Paths</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="saveHPaths">
+    <property name="geometry">
+     <rect>
+      <x>1760</x>
+      <y>980</y>
+      <width>80</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Save Hpaths</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1293</width>
+     <width>1920</width>
      <height>22</height>
     </rect>
    </property>

@@ -40,12 +40,18 @@ private:
 	QImage vp;
 	QPixmap vpPixmap;
 	QGraphicsScene* vpScene;
+
+	QImage hp;
+	QPixmap hpPixmap;
+	QGraphicsScene* hpScene;
 private slots:
 	void on_transform_clicked();
 	void on_restore_clicked();
 	void on_openNew_clicked();
 	void on_saveEdited_clicked();
 	void on_saveGradient_clicked();
+	void on_saveVPaths_clicked();
+	void on_saveHPaths_clicked();
 };
 
 #endif // MAINWINDOW_H

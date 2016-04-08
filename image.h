@@ -36,6 +36,7 @@ Q_OBJECT
 		cv::Mat originalImage;
 		cv::Mat editedImage;
 		cv::Mat weights;
+		cv::Mat totW;
 		std::vector<path_t> verticalPaths;
 		std::vector<path_t> horizontalPaths;
 		std::vector<path_t> removedVPaths;
@@ -48,6 +49,7 @@ Q_OBJECT
 		void shrinkHeightBy1Px(void);
 	public:
 		CARImage(const std::string& filename, QObject* parent = 0);
+		//~CARImage(void){if(totW) delete[] totW; return;};
 		void saveEdited(const std::string& filename);
 		void saveGradient(const std::string& filename);
 		void saveVertPaths(const std::string& filename);

@@ -95,7 +95,9 @@ void MainWindow::on_openNew_clicked(){
 
 		delete gradientScene;
 
-//		delete vpScene;
+		delete vpScene;
+
+		delete hpScene;
 	}
 	QString file = QFileDialog::getOpenFileName(this, tr("Open file!"), "./", tr("Images (*.png *.jpg *.jpeg *.bmp)"));
 	if (file ==0) return;
@@ -137,16 +139,25 @@ void MainWindow::on_openNew_clicked(){
 	ui->editedView->setScene(editedScene);
 	ui->editedView->fitInView(ui->editedView->sceneRect(), Qt::KeepAspectRatio);
 
-//	vp = image->getVertPaths();
-//
-//	vpPixmap = QPixmap::fromImage(vp);
-//
-//	vpScene = new QGraphicsScene(this);
-//	vpScene->addPixmap(vpPixmap);
-//	vpScene->setSceneRect(vpPixmap.rect());
-//	ui->verPathsView->setScene(vpScene);
-//	ui->verPathsView->fitInView(ui->verPathsView->sceneRect(), Qt::KeepAspectRatio);
+	vp = image->getVertPaths();
 
+	vpPixmap = QPixmap::fromImage(vp);
+
+	vpScene = new QGraphicsScene(this);
+	vpScene->addPixmap(vpPixmap);
+	vpScene->setSceneRect(vpPixmap.rect());
+	ui->vpView->setScene(vpScene);
+	ui->vpView->fitInView(ui->vpView->sceneRect(), Qt::KeepAspectRatio);
+
+	hp = image->getHorPaths();
+
+	hpPixmap = QPixmap::fromImage(hp);
+
+	hpScene = new QGraphicsScene(this);
+	hpScene->addPixmap(hpPixmap);
+	hpScene->setSceneRect(hpPixmap.rect());
+	ui->hpView->setScene(hpScene);
+	ui->hpView->fitInView(ui->hpView->sceneRect(), Qt::KeepAspectRatio);
 }
 void MainWindow::on_saveEdited_clicked(){
 	if (image == 0) return;
@@ -162,3 +173,16 @@ void MainWindow::on_saveGradient_clicked(){
 	image->saveGradient(file.toUtf8().constData());
 }
 
+void MainWindow::on_saveVPaths_clicked(){
+	if (image == 0) return;
+	QString file = QFileDialog::getSaveFileName(this, tr("Save file!"), "./", tr("Images (*.png *.jpg *.jpeg *.bmp)"));
+	if (file ==0) return;
+	image->saveVertPaths(file.toUtf8().constData());
+}
+
+void MainWindow::on_saveHPaths_clicked(){
+	if (image == 0) return;
+	QString file = QFileDialog::getSaveFileName(this, tr("Save file!"), "./", tr("Images (*.png *.jpg *.jpeg *.bmp)"));
+	if (file ==0) return;
+	image->saveHorPaths(file.toUtf8().constData());
+}

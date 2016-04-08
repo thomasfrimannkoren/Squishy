@@ -44,16 +44,18 @@ CARImage::CARImage(const string& filename, QObject* parent) : QObject(parent){
 	int cols = this->originalImage.cols;
 	int rows = this->originalImage.rows;
 
-	if (cols > 400 && cols >= rows){
+	if (cols > 500 && cols >= rows){
 		float aspectRatio = (float)rows / (float)cols;
-		Size size(400,(int)(400.0*aspectRatio));
+		Size size(500,(int)(500.0*aspectRatio));
 		cv::resize(this->originalImage, this->originalImage, size, 0, 0, CV_INTER_LANCZOS4);
 	}
-	else if (rows > 400 && rows >= cols){
+	else if (rows > 500 && rows >= cols){
 		float aspectRatio = (float)cols / (float)rows;
-		Size size((int)(400.0*aspectRatio), 400);
+		Size size((int)(500.0*aspectRatio), 500);
 		cv::resize(this->originalImage, this->originalImage, size, 0, 0, CV_INTER_LANCZOS4);
 	}
+
+	//totW = new float(cols*rows);
 
 	this->originalImage.copyTo(editedImage);
 }
@@ -61,7 +63,7 @@ CARImage::CARImage(const string& filename, QObject* parent) : QObject(parent){
 void CARImage::calculateWeights(Mat* image){
 	Mat imageGray, gradX, gradY, gradXTemp, gradYTemp, gradXf, gradYf;
 	int depth = CV_16S;
-	int kernelSize = 1;
+	int kernelSize = 3;
 	cvtColor(*image, imageGray, CV_BGR2GRAY);
 
 	//Gradient X
@@ -87,10 +89,10 @@ void CARImage::calculatePaths(int dir){
 
 	//uchar* weights;
 	weightedPoint v[rows*cols];
+	
+	float* w;
+	w = new float[rows*cols];
 
-    float* w;
-    w = new float[rows*cols];
-    cout << w << endl;
 	for(int i = 0; i < rows; ++i){
         float* r = this->weights.ptr<float>(i);
 		for(int j = 0; j < cols; ++j){
@@ -111,7 +113,16 @@ void CARImage::calculatePaths(int dir){
 	else{
         this->calculateHorizontalPaths(w, v, rows, cols);
 	}
-    delete[] w;
+	Mat totWeights(originalImage.rows, originalImage.cols, weights.type(), (void*)w, originalImage.cols*sizeof(float));
+	totWeights.copyTo(totWeights);
+	double min, max;
+	minMaxLoc(totWeights, &min, &max);
+	totWeights.convertTo(totWeights, CV_8UC1, 255.0/max, 0);
+//	Mat invert = Mat::ones(originalImage.size(), originalImage.type())*255;
+//	cvtColor(totWeights, totW, CV_GRAY2BGR);
+//	subtract(invert, retVal, retVal);
+	applyColorMap(totWeights, totW, COLORMAP_JET);
+	delete[] w;
 }
 
 void CARImage::calculateVerticalPaths(float* weights, weightedPoint* v, int rows, int cols){
@@ -134,6 +145,7 @@ void CARImage::calculateVerticalPaths(float* weights, weightedPoint* v, int rows
 			}
 			v[i*cols+j].previous = prev;
 			v[i*cols+j].weight = prev->weight + weights[i*cols+j];
+			weights[i*cols+j] = v[i*cols+j].weight;
 		}
 	}
 	for(int i = 0; i < cols; ++i){
@@ -167,6 +179,7 @@ void CARImage::calculateHorizontalPaths(float* weights, weightedPoint* v, int ro
 
 			v[j*cols+i].previous = prev;
 			v[j*cols+i].weight = prev->weight + weights[j*cols+i];
+			weights[j*cols+i] = v[j*cols+i].weight;
 		}
 	}
 	for(int i = 0; i < rows; ++i){
@@ -270,7 +283,7 @@ void CARImage::shrinkHeightBy1Px(void){
 	editedImage.copyTo(newImage);
 	for (int i = 0; i < cols; ++i){
 		for(int j = 0; j < (rows-1); ++j){
-			if( j >= rmPix[j] ){
+			if( j  >= rmPix[i] ){
 				Vec3b* tPixel = newImage.ptr<Vec3b>(j);
 				Vec3b* nPixel = newImage.ptr<Vec3b>(j+1);
 				tPixel[i][0] = nPixel[i][0];
@@ -289,6 +302,18 @@ void CARImage::saveEdited(const std::string& filename){
 void CARImage::saveGradient(const std::string& filename){
 	calculateWeights(&originalImage);
 	imwrite(filename, this->weights);
+}
+
+void CARImage::saveVertPaths(const std::string& filename){
+	calculateWeights(&originalImage);
+	calculatePaths(0);
+	imwrite(filename, this->totW);
+}
+
+void CARImage::saveHorPaths(const std::string& filename){
+	calculateWeights(&originalImage);
+	calculatePaths(1);
+	imwrite(filename, this->totW);
 }
 
 QImage CARImage::getOriginal(void){
@@ -328,26 +353,38 @@ void CARImage::restore(void){
 QImage CARImage::getVertPaths(void){
 	calculateWeights(&originalImage);
 	calculatePaths(0);
-
-	//sort(removedVPaths.begin(), removedVPaths.end());
-
-	int nPaths = removedVPaths.size();
-
-	Mat retVal;
-	originalImage.copyTo(retVal);
-
-	path_t* e;
-	for(int i = 0; i < nPaths; ++i){
-		e = &(removedVPaths[i]);
-		list<point_t>::iterator it;
-		for(it = e->path.begin(); it != e->path.end(); ++it){
-			Vec3b* pix = retVal.ptr<Vec3b>(it->x, it->y);
-			pix[0] = 0;
-			pix[1] = 0;
-			pix[2] = 0;
-		}
-	}
-	return Mat2QImage(retVal);
+//	Mat totWeights(originalImage.rows, originalImage.cols, weights.type(), (void*)totW, originalImage.cols*sizeof(float));
+	
+//	Mat retVal;
+//	Mat invert = Mat::ones(originalImage.size(), originalImage.type())*255;
+//	cvtColor(totWeights, retVal, CV_GRAY2BGR);
+//	subtract(invert, retVal, retVal);
+//	applyColorMap(totWeights, retVal, COLORMAP_JET);
+	return Mat2QImage(totW);
+//	//sort(removedVPaths.begin(), removedVPaths.end());
+//
+//	int nPaths = removedVPaths.size();
+//
+//	Mat retVal;
+//	originalImage.copyTo(retVal);
+//
+//	path_t* e;
+//	for(int i = 0; i < nPaths; ++i){
+//		e = &(removedVPaths[i]);
+//		list<point_t>::iterator it;
+//		for(it = e->path.begin(); it != e->path.end(); ++it){
+//			Vec3b* pix = retVal.ptr<Vec3b>(it->x, it->y);
+//			pix[0] = 0;
+//			pix[1] = 0;
+//			pix[2] = 0;
+//		}
+//	}
+//	return Mat2QImage(retVal);
 }
 
+QImage CARImage::getHorPaths(void){
+	calculateWeights(&originalImage);
+	calculatePaths(1);
+	return Mat2QImage(totW);
+}
 	
